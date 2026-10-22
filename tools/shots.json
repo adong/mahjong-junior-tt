@@ -1,0 +1,13 @@
+[
+ {
+  "label": "prefs",
+  "js": "localStorage.setItem('claudeGames.muted', '1'); localStorage.removeItem('claudeGames.lang'); localStorage.removeItem('mahjongJuniorTT.v1'); location.reload(); 'reload'",
+  "wait": 4000
+ },
+ {
+  "label": "title",
+  "js": "try { game.hold(true); game.step(1.5); for (let i = 0; i < 12; i++) game.step(0.5); 'title ' + game.info().phase } catch (e) { 'error ' + e.message }",
+  "wait": 600,
+  "shot": "screenshot"
+ }
+]

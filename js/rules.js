@@ -171,6 +171,33 @@
     return out;
   }
 
+  // 🐣 EASY's helper: the hand split into sets, pairs and loose tiles, the most sets first (then the most pairs).
+  // c: counts of the hand. Returns { sets: [[k, k, k] ...], pairs: [[k, k] ...], loose: [k ...] }.
+  function groups(c) {
+    const d = c.slice(), sets = [], pairs = [];
+    let best = null, bestScore = -1;
+    (function rec(i) {
+      while (i < NK && !d[i]) i++;
+      if (i >= NK) {
+        const sc = sets.length * 10 + Math.min(pairs.length, 1) * 4 + pairs.length;
+        if (sc > bestScore) {
+          bestScore = sc;
+          best = { sets: sets.map((x) => x.slice()), pairs: pairs.map((x) => x.slice()) };
+        }
+        return;
+      }
+      if (d[i] >= 3) { d[i] -= 3; sets.push([i, i, i]); rec(i); sets.pop(); d[i] += 3; }
+      if (isNum(i) && i % 9 <= 6 && d[i + 1] && d[i + 2]) { d[i]--; d[i + 1]--; d[i + 2]--; sets.push([i, i + 1, i + 2]); rec(i); sets.pop(); d[i]++; d[i + 1]++; d[i + 2]++; }
+      if (d[i] >= 2) { d[i] -= 2; pairs.push([i, i]); rec(i); pairs.pop(); d[i] += 2; }
+      d[i]--; rec(i); d[i]++;
+    })(0);
+    const used = new Array(NK).fill(0);
+    for (const g of [...best.sets, ...best.pairs]) for (const k of g) used[k]++;
+    const loose = [];
+    for (let k = 0; k < NK; k++) for (let n = used[k]; n < c[k]; n++) loose.push(k);
+    return { sets: best.sets, pairs: best.pairs, loose };
+  }
+
   // ---------------------------------------------------------------- claims: chow, pung, win
 
   // the pairs of kinds in hand c that make a chow with thrown kind k (three in a row, one suit, 1 to 9: no wrapping)
@@ -564,7 +591,7 @@
 
   MJ.rules = {
     NK, ALL, isNum, suitOf, rankOf, nameOf, SAB, rng, shuffle,
-    isWin, allSets, shanten, waits, chowOptions,
+    isWin, allSets, shanten, waits, chowOptions, groups,
     newRound, sortHand, counts, unseen, draw, canSelfWin, selfWin, discard, options, anyOption, claim, pass, resolve,
     score, LEVELS, analyse, bestThrow, cpuThrow, cpuClaim, autoPlay, autoStep,
     // every tile is somewhere, exactly once: the wall, a hand, a pond or a shown set
