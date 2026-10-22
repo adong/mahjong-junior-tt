@@ -314,17 +314,16 @@
 
     // the boys: feet and height in pixels
     if (!tall) {
-      const h = Math.min(strip.h * (two ? 0.32 : 0.36), strip.w * 1.45);
-      L.actors[0] = { x: strip.x + strip.w * 0.5, feet: H - safe.b - 10, h };
-      if (two) L.actors[2] = { x: strip.x + strip.w * 0.5, feet: strip.y + strip.h * 0.47, h };
+      // 2 players: the brothers side by side at the bottom of the strip (so a high five is a run, not a flight)
+      const h = two ? Math.min(strip.h * 0.32, strip.w * 1.1) : Math.min(strip.h * 0.36, strip.w * 1.45);
+      L.actors[0] = { x: strip.x + strip.w * (two ? 0.3 : 0.5), feet: H - safe.b - 10, h };
+      if (two) L.actors[2] = { x: strip.x + strip.w * 0.74, feet: H - safe.b - 16, h: h * 0.94 };
       L.buddy = { x: strip.x + strip.w * 0.5 + h * 0.3, feet: H - safe.b - 10 - h * 0.12, h: h * 0.85 };
-      L.meet = [{ x: strip.x + strip.w * 0.5, feet: H - safe.b - 10 }, { x: strip.x + strip.w * 0.5, feet: H - safe.b - 10 - h * 0.25 }];
     } else {
       const h = strip.h * 0.84;
       L.actors[0] = { x: strip.x + strip.w * (two ? 0.3 : 0.38), feet: strip.y + strip.h - 4, h };
       if (two) L.actors[2] = { x: strip.x + strip.w * 0.55, feet: strip.y + strip.h - 4, h };
       L.buddy = { x: strip.x + strip.w * 0.56, feet: strip.y + strip.h - 2, h: h * 0.85 };
-      L.meet = [{ x: strip.x + strip.w * 0.4, feet: strip.y + strip.h - 4 }, { x: strip.x + strip.w * 0.47, feet: strip.y + strip.h - 4 }];
     }
     // the claim buttons: just inside the table, next to the kid being asked
     L.claim[0] = tall ? { x: W / 2, y: bottomHand.y - 8, anchor: 'bottom' } : { x: (bottomHand.x0 + bottomHand.x1) / 2, y: bottomHand.y - hh / 2 - hh * 0.3 - 10, anchor: 'bottom' };
@@ -346,7 +345,6 @@
     };
     [L.table, L.inner, L.compass, L.strip, L.buddy].forEach(mv);
     for (const group of [L.cells, L.badges, L.actors, L.claim, L.handRect, L.seatBox]) if (group) Object.values(group).forEach(mv);
-    (L.meet || []).forEach(mv);
     L.bars.forEach(mv);
     for (const t of L.tiles.values()) mv(t);
     return L;

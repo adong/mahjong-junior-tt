@@ -19,7 +19,6 @@
   const S = Kit.sound;
   const $ = (id) => document.getElementById(id);
   const { rand } = Kit.gfx;
-  const t = (en, zh) => Kit.lang.t(en, zh);
 
   const KEY = 'mahjongJuniorTT.v1';
   const ZCH = 1.4; // the boys stand this far in front of the table
@@ -60,7 +59,8 @@
   const ctxKey = () => (prefs.mode === 'two' ? 'two' : prefs.who);
   const diffNow = () => prefs.levels[ctxKey()] || 'easy';
   const zh = () => Kit.lang.is('zh');
-  const tileName = (id) => RL.nameOf(G.R.KIND[id], zh());
+  // a tile's name, in English: js/zh.js says every one in 中文 (and in the sentences they're in)
+  const tileName = (id) => RL.nameOf(G.R.KIND[id], false);
 
   // ---------------------------------------------------------------- who's at the table
 
@@ -321,7 +321,7 @@
     const key = w.join(',');
     if (w.length && G.ready[s] !== key) {
       G.ready[s] = key;
-      toast(t('ONE TILE TO WIN!'), 'learn');
+      toast('ONE TILE TO WIN!', 'learn');
       MJ.sfx.ready();
     }
   }
@@ -359,7 +359,8 @@
     if (!q) return resolveClaims();
     G.wait = { kind: 'claim', seat: q.s, o: q.o };
     const R = G.R, from = R.last.from;
-    setStatus(() => (G.mode === 'two' ? t(`${G.seats[q.s].name}: TAKE ${G.seats[from].name}'S ${tileName(R.last.id)}?`, `${G.seats[q.s].name}：要 ${G.seats[from].name} 的${tileName(R.last.id)}吗？`) : t(`TAKE ${G.seats[from].name}'S ${tileName(R.last.id)}?`, `要 ${G.seats[from].name} 的${tileName(R.last.id)}吗？`)), true);
+    const offer = `TAKE ${G.seats[from].name}'S ${tileName(R.last.id)}?`;
+    setStatus(() => (G.mode === 'two' ? `${G.seats[q.s].name}: ${offer}` : offer), true);
     showClaims(q.s, q.o, false);
     MJ.sfx.offer();
   }
@@ -399,7 +400,7 @@
     if (isKid(s)) {
       G.seats[s].actor.react('cheer');
       MJ.buddy.cheer();
-      if (G.diff === 'easy') toast(res.type === 'pung' ? t('A PUNG: THREE THE SAME!') : t('A CHOW: THREE IN A ROW!'), 'learn');
+      if (G.diff === 'easy') toast(res.type === 'pung' ? 'A PUNG: THREE THE SAME!' : 'A CHOW: THREE IN A ROW!', 'learn');
     }
     relayout();
     if (isKid(s)) after(0.45, () => waitThrow(s));
@@ -415,7 +416,7 @@
     setStatus(() => (two ? `${G.seats[s].name}'S TURN! THROW A TILE.` : 'YOUR TURN! THROW A TILE.'), true);
     if (RL.canSelfWin(R, s)) {
       showClaims(s, { win: true, pung: false, chows: [] }, true);
-      toast(t('YOU CAN WIN! TAP HÚ!'), 'save');
+      toast('YOU CAN WIN! TAP HÚ!', 'save');
       MJ.sfx.offer();
     } else hideClaims();
     relayout();
@@ -438,7 +439,7 @@
     MJ.sfx.pick();
     relayout();
     if (G.diff === 'easy') toast(tileName(id), 'name');
-    if (prefs.taps < 3 && !G.keyboard) toast(t('TAP IT AGAIN TO THROW IT!'), 'learn');
+    if (prefs.taps < 3 && !G.keyboard) toast('TAP IT AGAIN TO THROW IT!', 'learn');
     return 'picked';
   }
   function throwTile(s, id) {
@@ -508,13 +509,13 @@
       const seat = G.seats[res.winner];
       ui.oFace.innerHTML = face(res.winner);
       ui.oTitle.textContent = `${seat.name} WINS!`;
-      ui.oSub.textContent = res.by === 'self' ? t('HÚ! A WINNING TILE FROM THE WALL!') : t(`HÚ! WITH ${G.seats[res.from].name}'S ${tileName(R.winTile)}!`, `胡！用了 ${G.seats[res.from].name} 打的${tileName(R.winTile)}！`);
+      ui.oSub.textContent = res.by === 'self' ? 'HÚ! A WINNING TILE FROM THE WALL!' : `HÚ! WITH ${G.seats[res.from].name}'S ${tileName(R.winTile)}!`;
       ui.oHand.innerHTML = handHTML(res.winner);
-      ui.oPts.innerHTML = res.score.items.map(([what, n]) => `<span>${t(what)} +${n}</span>`).join('') + `<span class="total">⭐ ${res.score.total}</span>`;
+      ui.oPts.innerHTML = res.score.items.map(([what, n]) => `<span>${what} +${n}</span>`).join('') + `<span class="total">⭐ ${res.score.total}</span>`;
     } else {
       ui.oFace.innerHTML = kidSeats().map(face).join('');
       ui.oTitle.textContent = "IT'S A DRAW!";
-      ui.oSub.textContent = t('THE WALL RAN OUT OF TILES. NOBODY WON THIS TIME.');
+      ui.oSub.textContent = 'THE WALL RAN OUT OF TILES. NOBODY WON THIS TIME.';
       ui.oHand.innerHTML = '';
       ui.oPts.innerHTML = '';
     }
@@ -639,6 +640,14 @@
       return { x: w.x, y: w.y, z: ZCH + 0.3 };
     },
     player: () => G.seats[kidSeats()[0]].actor,
+    // 2 players: the high five
+    players: () => kidSeats().map((s) => G.seats[s].actor),
+    meet() {
+      const [a, c] = kidSeats().map((s) => G.seats[s].actor.root.position);
+      const mid = (a.x + c.x) / 2, gap = 0.55 * actorScale();
+      return [{ x: mid - gap, z: a.z }, { x: mid + gap, z: c.z }];
+    },
+    homes: () => kidSeats().map((s) => spotWorld(G.L.actors[s])),
     toast: (text, cls) => toast(text, cls),
     over: () => G.state !== 'play',
     // he helps when it's your turn to throw, or a tile is on offer to you
@@ -648,25 +657,25 @@
       let say, at = null;
       if (G.wait.kind === 'throw') {
         if (RL.canSelfWin(R, s)) {
-          say = t('SAY HÚ! YOU WIN!');
+          say = 'SAY HÚ! YOU WIN!';
           hintButton('win');
         } else {
           const id = RL.bestThrow(R, s);
           G.hint = id;
           relayout();
           at = ST.tile(id).px;
-          say = t(`THROW THE ${tileName(id)}!`, `打这张${tileName(id)}！`);
+          say = `THROW THE ${tileName(id)}!`;
         }
       } else {
         const c = RL.cpuClaim(R, s, 'best');
         if (!c) {
-          say = t('PASS THIS ONE!');
+          say = 'PASS THIS ONE!';
           hintButton('pass');
         } else if (c.type === 'win') {
-          say = t('SAY HÚ! YOU WIN!');
+          say = 'SAY HÚ! YOU WIN!';
           hintButton('win');
         } else {
-          say = c.type === 'pung' ? t('TAKE IT! PUNG!') : t('TAKE IT! CHOW!');
+          say = c.type === 'pung' ? 'TAKE IT! PUNG!' : 'TAKE IT! CHOW!';
           hintButton(c.type, c.ix);
         }
       }
@@ -988,7 +997,8 @@
   function step(dt, draw = true) {
     dt = Math.min(dt, 0.1);
     if ((innerWidth || 1) !== ST.W || (innerHeight || 1) !== ST.H) layout();
-    const running = G.state !== 'paused' && G.state !== 'boot';
+    // the story card (opened by itself the first time you play) holds the round until it's closed
+    const running = G.state !== 'paused' && G.state !== 'boot' && !(G.story >= 0 && G.state === 'play');
     if (running) {
       runTimers(dt);
       ST.update(dt);
