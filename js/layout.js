@@ -54,12 +54,12 @@
   }
 
   // o: { W, H, area: { x, y, w, h } (the whole screen if left out), R, humans: [seat...], easy, sel: { seat: id },
-  //      hudH, callW, safe: { l, r, t, b }, reveal }
+  //      hudH, callW, safe: { l, r, t, b }, reveal, tall (force the two-row hand) }
   function layout(o) {
     const A = o.area || { x: 0, y: 0, w: o.W, h: o.H };
     const W = A.w, H = A.h, R = o.R;
     const safe = o.safe || { l: 0, r: 0, t: 0, b: 0 };
-    const tall = W / H < 0.82;
+    const tall = o.tall != null ? o.tall : W / H < 0.82;
     const L = { tall, tiles: new Map(), badges: [], actors: {}, bars: [], claim: {}, handRect: {}, hw: 0 };
     const pad = 8;
     const rim = clamp(Math.min(W, H) * 0.018, 6, 14);

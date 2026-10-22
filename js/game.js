@@ -26,8 +26,8 @@
   const FRIENDS = { foxy: '🦊', panda: '🐼', froggy: '🐸' };
   const NAMES = { teddy: 'TEDDY', tommy: 'TOMMY', foxy: 'FOXY', panda: 'PANDA', froggy: 'FROGGY' };
   const LUCK = { easy: 0.4, normal: 0.1 }; // how often a kid's draw is a helpful one (see rules.draw)
-  const THINK = { easy: [1.0, 1.5], normal: [0.6, 1.0], demo: [0.55, 0.85] }; // a friend's thinking time (s)
-  const SHOW = { easy: 1.0, normal: 0.7, demo: 0.6 }; // how long a thrown tile waits on the disc
+  const THINK = { easy: [0.75, 1.1], normal: [0.5, 0.85], demo: [0.55, 0.85] }; // a friend's thinking time (s)
+  const SHOW = { easy: 0.85, normal: 0.6, demo: 0.6 }; // how long a thrown tile waits on the disc
   const RANK = { win: 3, pung: 2, chow: 1 };
   const WIND_EN = 'ESWN', WIND_ZH = '东南西北';
 
@@ -99,9 +99,10 @@
     const home = G.state === 'home' || G.state === 'boot';
     const hudH = home ? 0 : Math.max(44, ui.hudtop.getBoundingClientRect().bottom);
     const callW = home ? 0 : (ui.callBtn.getBoundingClientRect().width || 90) + 14;
+    const A = area();
     const L = MJ.layout({
-      W: ST.W, H: ST.H, area: area(), R, humans: faceUp(), easy: G.diff === 'easy' && !G.demo, sel: G.sel, hudH, callW,
-      reveal: R.phase === 'over',
+      W: ST.W, H: ST.H, area: A, R, humans: faceUp(), easy: G.diff === 'easy' && !G.demo, sel: G.sel, hudH, callW,
+      reveal: R.phase === 'over', tall: home && A.w / A.h < 1.05 ? true : null, // the title: the hand big, in two rows
     });
     G.L = L;
     ST.setTable(L.table, L.rim);
@@ -529,13 +530,13 @@
     const c = RL.counts(R, s);
     const g = RL.groups(c);
     const left = R.hands[s].slice();
-    const take = (k) => left.splice(left.findIndex((id) => R.KIND[id] === k), 1)[0];
-    // put the winning tile in its group's place, not just anywhere of its kind
+    // the winning tile goes into the first group of its kind (so its ring shows)
+    const take = (k) => {
+      let i = R.KIND[R.winTile] === k ? left.indexOf(R.winTile) : -1;
+      if (i < 0) i = left.findIndex((id) => R.KIND[id] === k);
+      return left.splice(i, 1)[0];
+    };
     const groups = [...g.sets, ...g.pairs].map((grp) => grp.map(take));
-    for (const grp of groups) {
-      const i = grp.findIndex((id) => R.KIND[id] === R.KIND[R.winTile]);
-      if (i >= 0 && !grp.includes(R.winTile) && left.indexOf(R.winTile) < 0 && groups.every((x) => !x.includes(R.winTile))) grp[i] = R.winTile;
-    }
     let html = groups.map((grp) => `<span class="grp">${grp.map(img).join('')}</span>`).join('');
     html += R.melds[s].map((m) => `<span class="grp shown">${m.ids.map(img).join('')}</span>`).join('');
     if (left.length) html += `<span class="grp">${left.map(img).join('')}</span>`;
